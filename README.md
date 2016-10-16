@@ -26,14 +26,14 @@ Info (in Russian) on new wheel adapter can be found [here](http://pccar.ru/showp
 ### Folder structure:
 <pre>
 +-- libraries
-|   +-- Tablet	- Tablet library for new wheel adapter
+|   +-- Tablet	                - Tablet library for new wheel adapter
 +-- sketches
-    +-- wheel-adapter - Sketch for new wheel adapter
-    +-- wheel-adapter-old - Sketch for old wheel adapter
-    |   +-- patches - patches for base Arduino IDE files
+    +-- wheel-adapter           - Sketch for new wheel adapter
+    +-- wheel-adapter-old       - Sketch for old wheel adapter
+    |   +-- patches             - patches for base Arduino IDE files
     |       +-- arduino-1.0.5
     |       +-- arduino-1.6.5
-    +-- wheel-buttondump - Sketch for getting constant values for your own car resistive buttons
+    +-- wheel-buttondump        - Sketch for getting constant values for your own car resistive buttons
 </pre>
 ### Adaptation of constants for your car
 
