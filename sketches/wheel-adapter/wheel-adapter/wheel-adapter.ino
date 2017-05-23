@@ -1,6 +1,8 @@
-# Tablet library taken from here http://pccar.ru/showpost.php?p=366382&postcount=669
+#include <Arduino.h>
 
-#include <Tablet.h>
+// Tablet library taken from here http://pccar.ru/showpost.php?p=366382&postcount=669
+
+#include "Tablet.h"
 
 int analogPin=3;    //пин для подключения кнопок 
 int data; 
