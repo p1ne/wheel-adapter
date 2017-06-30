@@ -10,6 +10,8 @@ void loop()
 { 
   data=analogRead(analogPin); //читаем значение нажатой кнопки 
    
+  Serial.print(millis());
+  Serial.print(" ");
   Serial.println(data);
     
 }  

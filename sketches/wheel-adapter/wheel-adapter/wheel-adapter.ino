@@ -10,12 +10,14 @@ unsigned long flag = 0;
 unsigned long eventTime = 0;
 unsigned long pauseMillis = 0;
 
-#define NOBUTTON 256
-#define PLAY 432
-#define NEXT 652
-#define PREV 538
-#define VOLUP 772
-#define VOLDOWN 896
+// Constant values for 1K resistor
+
+#define NOBUTTON 484
+#define PLAY 678
+#define NEXT 845
+#define PREV 767
+#define VOLUP 913
+#define VOLDOWN 972
 
 #define TOLERANCE 10
 
@@ -41,7 +43,7 @@ void loop()
 
 
 
-  if((tolerance(data, NOBUTTON) || tolerance(data, 0)) && flag == 0) // все кнопки отпущены 
+  if((tolerance(data, NOBUTTON) || tolerance(data, 0)) && flag == 0) // все кнопки отпущены
    {
     eventTime=millis();
    }
