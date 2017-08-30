@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 int analogPin=3;    //пин для подключения кнопок 
 int data; 
 
