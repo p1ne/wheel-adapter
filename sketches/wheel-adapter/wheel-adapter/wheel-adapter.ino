@@ -84,13 +84,18 @@ void loop()
 {
   data.set(analogRead(analogPin), millis());
 
-  if (!data.resistanceEqualsTolerance(dataPrev.getResistance())) {
-    dataPrev = data;
-  }
-
   if (data.resistanceEqualsTolerance(NOBUTTON)) {
-
+    if (dataPrev.resistanceEqualsTolerance(NEXT) && (data.getTimestamp() - dataPrev.getTimestamp() <= 500) ) {
+      Tablet.next();
+      delay(500);
       Tablet.clear();
+    } else if (dataPrev.resistanceEqualsTolerance(PREV) && (data.getTimestamp() - dataPrev.getTimestamp() <= 500) ) {
+      Tablet.previous();
+      delay(500);
+      Tablet.clear();
+    } else {
+      Tablet.clear();
+    }
   } else if (data.resistanceEqualsTolerance(VOLUP)) {
     Tablet.vol_up();
     delay(250);
@@ -99,15 +104,7 @@ void loop()
     Tablet.vol_down();
     delay(250);
     Tablet.clear();
-  } else if (data.resistanceEqualsTolerance(NEXT) && (data.getTimestamp() - dataPrev.getTimestamp() <= 500) ) {
-    Tablet.next();
-    delay(500);
-    Tablet.clear();
-  } else if (data.resistanceEqualsTolerance(PREV) && (data.getTimestamp() - dataPrev.getTimestamp() <= 500) ) {
-    Tablet.previous();
-    delay(500);
-    Tablet.clear();
-} else if (data.resistanceEqualsTolerance(NEXT) && dataPrev.resistanceEqualsTolerance(NEXT) && (data.getTimestamp() - dataPrev.getTimestamp() > 500) ) {
+  } else if (data.resistanceEqualsTolerance(NEXT) && dataPrev.resistanceEqualsTolerance(NEXT) && (data.getTimestamp() - dataPrev.getTimestamp() > 500) ) {
     Tablet.forward();
     delay(250);
     Tablet.clear();
@@ -119,6 +116,10 @@ void loop()
     Tablet.play_pause();
     delay(500);
     Tablet.clear();
+  }
+
+  if (!data.resistanceEqualsTolerance(dataPrev.getResistance())) {
+    dataPrev = data;
   }
 
 }
