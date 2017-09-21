@@ -1,8 +1,6 @@
 #include <Arduino.h>
+#include "Tablet.h" // Tablet library taken from here http://pccar.ru/showpost.php?p=366382&postcount=669
 
-// Tablet library taken from here http://pccar.ru/showpost.php?p=366382&postcount=669
-
-#include "Tablet.h"
 
 // Constant values for 1K resistor
 
@@ -12,114 +10,229 @@
 #define PREV 767
 #define VOLUP 913
 #define VOLDOWN 972
+#define FFWD 5000
+#define REW 10000
+
+uint16_t allButtons[8] = { NOBUTTON, PLAY, NEXT, PREV, VOLUP, VOLDOWN, FFWD, REW };
 
 uint8_t analogPin=3;
 
-class WheelKeyEvent {
-protected:
-  uint16_t tolerance;
-  uint16_t resistance;
-  uint32_t timestamp;
-
-public:
-  void set(const uint16_t r, const uint16_t t) {
-    resistance = r;
-    timestamp = t;
-  }
-
-  void set(const uint16_t r, const uint16_t t, const uint16_t tol) {
-    resistance = r;
-    timestamp = t;
-    tolerance = tol;
-  }
-
-  void setTolerance(const uint16_t t) {
-    tolerance = t;
-  }
-
-  uint16_t getResistance() const {
-    return resistance;
-  }
-
-  uint16_t getTimestamp() const {
-    return timestamp;
-  }
-
-  uint16_t getTolerance() const {
-    return tolerance;
-  }
-
-  boolean resistanceEqualsTolerance(const uint16_t expected) const
-  {
-    return ((resistance >= expected - tolerance) && (resistance <= expected + tolerance));
-  }
-
-  void operator = (const WheelKeyEvent v)  {
-    resistance = v.getResistance();
-    timestamp = v.getTimestamp();
-    tolerance = v.getTolerance();
-  }
-
-};
-
-WheelKeyEvent data;
-WheelKeyEvent dataPrev;
-
-uint16_t flag = 0;
-uint16_t eventTime = 0;
-uint16_t pauseMillis = 0;
+uint16_t currentTimestamp, newTimestamp;
+uint16_t currentState, newState;
+uint16_t tolerance;
 
 boolean between(const uint16_t value, const uint16_t a, const uint16_t b)
 {
   return ( (value >= a) && (value <= b) );
 }
 
+boolean resistanceEqualsTolerance(const uint16_t actual, const uint16_t expected)
+{
+  return ((actual >= expected - tolerance) && (actual <= expected + tolerance));
+}
+
 void setup()
 {
-    data.set(NOBUTTON, 0, 10);
-    dataPrev.set(NOBUTTON, 0, 10);
+  currentState = NOBUTTON;
+  currentTimestamp = millis();
+  tolerance = 10;
+  Tablet.begin();
 }
+
+uint16_t normalizeResistance(uint16_t resistance) {
+  for (int i=0;i<8;i++) {
+    if (resistanceEqualsTolerance(resistance, allButtons[i])) {
+      return allButtons[i];
+    }
+  }
+  return NOBUTTON;
+}
+
+uint16_t noButton(uint16_t buttonState, uint32_t timestamp)
+{
+  currentTimestamp = timestamp;
+  return buttonState;
+}
+
+uint16_t next(uint16_t buttonState, uint32_t timestamp)
+{
+  switch (buttonState) {
+    case NOBUTTON:
+      if (timestamp - currentTimestamp < 250) {
+        currentTimestamp = timestamp;
+        Tablet.next();
+        Tablet.clear();
+        return NOBUTTON;
+      }
+      break;
+    case NEXT:
+      if (timestamp - currentTimestamp >= 250) {
+        currentTimestamp = timestamp;
+        return FFWD;
+      }
+      return NEXT;
+      break;
+    default:
+      currentTimestamp = timestamp;
+      return buttonState;
+      break;
+  }
+  return buttonState;
+}
+
+uint16_t prev(uint16_t buttonState, uint32_t timestamp)
+{
+  switch (buttonState) {
+    case NOBUTTON:
+      if (timestamp - currentTimestamp < 250) {
+        currentTimestamp = timestamp;
+        Tablet.previous();
+        Tablet.clear();
+        return NOBUTTON;
+      }
+      break;
+    case PREV:
+      if (timestamp - currentTimestamp >= 250) {
+        currentTimestamp = timestamp;
+        return REW;
+      }
+      return PREV;
+      break;
+    default:
+      currentTimestamp = timestamp;
+      return buttonState;
+      break;
+  }
+  return buttonState;
+}
+
+uint16_t volup(uint16_t buttonState, uint32_t timestamp)
+{
+  switch (buttonState) {
+    case VOLUP:
+      if (timestamp - currentTimestamp >= 250) {
+        Tablet.vol_up();
+        Tablet.clear();
+        currentTimestamp = timestamp;
+      }
+      return VOLUP;
+      break;
+    default:
+      currentTimestamp = timestamp;
+      return buttonState;
+      break;
+  }
+  return buttonState;
+}
+
+uint16_t voldown(uint16_t buttonState, uint32_t timestamp)
+{
+  switch (buttonState) {
+    case VOLDOWN:
+      if (timestamp - currentTimestamp >= 250) {
+        Tablet.vol_down();
+        Tablet.clear();
+        currentTimestamp = timestamp;
+      }
+      return VOLDOWN;
+      break;
+    default:
+      currentTimestamp = timestamp;
+      return buttonState;
+      break;
+  }
+  return buttonState;
+}
+
+uint16_t play(uint16_t buttonState, uint32_t timestamp)
+{
+  switch (buttonState) {
+    case NOBUTTON:
+      currentTimestamp = timestamp;
+      Tablet.play_pause();
+      Tablet.clear();
+      return buttonState;
+      break;
+    default:
+      currentTimestamp = timestamp;
+      return buttonState;
+      break;
+  }
+  return buttonState;
+}
+
+uint16_t ffwd(uint16_t buttonState, uint32_t timestamp)
+{
+  switch (buttonState) {
+    case NEXT:
+      if (timestamp - currentTimestamp >= 250) {
+        Tablet.forward();
+        Tablet.clear();
+        currentTimestamp = timestamp;
+      }
+      return FFWD;
+      break;
+    default:
+      currentTimestamp = timestamp;
+      return buttonState;
+      break;
+  }
+  return buttonState;
+}
+
+uint16_t rew(uint16_t buttonState, uint32_t timestamp)
+{
+  switch (buttonState) {
+    case PREV:
+      if (timestamp - currentTimestamp >= 250) {
+        Tablet.rewind();
+        Tablet.clear();
+        currentTimestamp = timestamp;
+      }
+      return REW;
+      break;
+    default:
+      currentTimestamp = timestamp;
+      return buttonState;
+      break;
+  }
+  return buttonState;
+}
+
 
 void loop()
 {
-  data.set(analogRead(analogPin), millis());
+  newState = normalizeResistance(analogRead(analogPin));
+  newTimestamp = millis();
 
-  if (data.resistanceEqualsTolerance(NOBUTTON)) {
-    if (dataPrev.resistanceEqualsTolerance(NEXT) && (data.getTimestamp() - dataPrev.getTimestamp() <= 500) ) {
-      Tablet.next();
-      delay(500);
+  switch (currentState) {
+    case NOBUTTON:
+      currentState = noButton(newState, newTimestamp);
+      break;
+    case PLAY:
+      currentState = play(newState, newTimestamp);
+      break;
+    case VOLUP:
+      currentState = volup(newState, newTimestamp);
+      break;
+    case VOLDOWN:
+      currentState = voldown(newState, newTimestamp);
+      break;
+    case NEXT:
+      currentState = next(newState, newTimestamp);
+      break;
+    case PREV:
+      currentState = prev(newState, newTimestamp);
+      break;
+    case FFWD:
+      currentState = ffwd(newState, newTimestamp);
+      break;
+    case REW:
+      currentState = rew(newState, newTimestamp);
+      break;
+    default:
       Tablet.clear();
-    } else if (dataPrev.resistanceEqualsTolerance(PREV) && (data.getTimestamp() - dataPrev.getTimestamp() <= 500) ) {
-      Tablet.previous();
-      delay(500);
-      Tablet.clear();
-    } else {
-      Tablet.clear();
-    }
-  } else if (data.resistanceEqualsTolerance(VOLUP)) {
-    Tablet.vol_up();
-    delay(250);
-    Tablet.clear();
-  } else if (data.resistanceEqualsTolerance(VOLDOWN)) {
-    Tablet.vol_down();
-    delay(250);
-    Tablet.clear();
-  } else if (data.resistanceEqualsTolerance(NEXT) && dataPrev.resistanceEqualsTolerance(NEXT) && (data.getTimestamp() - dataPrev.getTimestamp() > 500) ) {
-    Tablet.forward();
-    delay(250);
-    Tablet.clear();
-  } else if (data.resistanceEqualsTolerance(PREV) && dataPrev.resistanceEqualsTolerance(PREV) && (data.getTimestamp() - dataPrev.getTimestamp() > 500) ) {
-    Tablet.rewind();
-    delay(250);
-    Tablet.clear();
-  } else if (data.resistanceEqualsTolerance(PLAY)) {
-    Tablet.play_pause();
-    delay(500);
-    Tablet.clear();
+      break;
   }
-
-  if (!data.resistanceEqualsTolerance(dataPrev.getResistance())) {
-    dataPrev = data;
-  }
-
+  delay(50);
 }
